@@ -9,7 +9,8 @@ Last updated Wed Jan 4 2023: cleaning up, updating directories
 
 
 """
-import os, sys
+import os
+import sys
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -17,57 +18,61 @@ from scipy.optimize import minimize
 from sklearn import preprocessing
 
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Specify directories; settings
-#------------------------------------------------------------
+# ------------------------------------------------------------
 os.chdir('..')
 home_dir = os.getcwd()
-dataDir = home_dir +  '/'
+dataDir = home_dir + '/'
 
-n_features = 2 # dimensionality of assumed feature space
-n_base_stims = 7 # unique images used as basis for morphing
-scaleVariances = False # see fitPilot.py for details
+n_features = 2  # dimensionality of assumed feature space
+n_base_stims = 7  # unique images used as basis for morphing
+scaleVariances = False  # see fitPilot.py for details
 if scaleVariances:
     varScaling = 'scaledVars'
 else:
     varScaling = ''
 
-truncatePredictions = '' # either '' for regular predictions or 'truncated'
-normalizedFeatures = '' # either 'normed' or ''
+truncatePredictions = ''  # either '' for regular predictions or 'truncated'
+normalizedFeatures = ''  # either 'normed' or ''
 constrainedMu = False
-dnnFeatures = 'vgg' # either '' or spec of DNN (vgg, ResNet50)
-fixParam = 'alphazero_wVzero' # mainly '' or 'alphazero_wVzero'; other are possible
+dnnFeatures = 'vgg'  # either '' or spec of DNN (vgg, ResNet50)
+fixParam = 'alphazero_wVzero'  # mainly '' or 'alphazero_wVzero'
+# others are possible
 
-save = False # save parameter values?
-plot = True # plot data vs predictions?
-preLoad = True # load parameter values rather than fit them?
-fitMissingParticipants = False # fit data of participants that cannot be preloaded?
-# NOTE that you have to set this to False if you want to preload data from all participants.
+save = False  # save parameter values?
+plot = True  # plot data vs predictions?
+preLoad = False  # load parameter values rather than fit them?
+fitMissingParticipants = False
+# fit data of participants that cannot be preloaded?
+# NOTE that you have to set this to False if you want to preload data from 
+# all participants.
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Load model; data
-#------------------------------------------------------------
-sys.path.append((home_dir +'/'))
+# ------------------------------------------------------------
+sys.path.append((home_dir + '/'))
 import fitPilot
+
 fixedDict = {}
 
 # get data
 df = pd.read_csv(dataDir + 'merged_rating_data.csv')
 
 if dnnFeatures!='':
-        # get (reduced) VGG features
-    featureDf = pd.read_pickle(dataDir + '/' 
-                               + dnnFeatures + '_features/' + dnnFeatures 
+    # get (reduced) VGG features
+    featureDf = pd.read_pickle(dataDir + '/'
+                               + dnnFeatures + '_features/' + dnnFeatures
                                + '_features_reduced_to_'
-                            + str(n_features) + '.pkl')
-    # now create an array that contains featuers of the images in the right order
+                               + str(n_features) + '.pkl')
+    # now create an array that contains featuers of the images in right order
     for imgInd in np.unique(df.imageInd):
         img = np.unique(df.image[df.imageInd==imgInd])[0]
         if imgInd==0:
             dnnFeatValues = featureDf.feature_array[featureDf.image==img].values[0]
         else:
             dnnFeatValues = np.vstack([dnnFeatValues,
-                            featureDf.feature_array[featureDf.image==img].values[0]])
+                                       featureDf.feature_array[featureDf.image==img].values[0]])
 
     if normalizedFeatures=='normed':
         dnnFeatValues = preprocessing.normalize(dnnFeatValues, 'l2')
@@ -103,9 +108,9 @@ participantList = ['q22fa', 'eunhf', 'fax28', '1z0ca', '0xmq6',
 # sort the participant list for consistency
 participantList.sort()
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Set bounds for optimization
-#------------------------------------------------------------
+# ------------------------------------------------------------
 if 'alphazero' not in fixParam:
     bounds = ((0,0.1), (0,1e4),) # alpha, weight(s)
 else:
@@ -127,12 +132,13 @@ nParams = len(bounds)
 
 # get a list of pairs (excluding source images)
 tmp = df.pair.unique().tolist()
-sourceImInds = [tmp.index(im) for im in ['5', '37', '41', '57', '64',  '92', '101']]
+sourceImInds = [tmp.index(im) for im in ['5', '37', '41', '57', '64',
+                                         '92', '101']]
 pairs = np.delete(tmp, sourceImInds)
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Cost function
-#------------------------------------------------------------
+# ------------------------------------------------------------
 def pred_ratings(parameters, data):
     pred = fitPilot.predict(parameters, data.iloc[:55],
                                   n_features=n_features,
@@ -147,11 +153,12 @@ def cost_fn(parameters, data, testPair, test=False):
 
     if test:
         cost = np.sqrt(np.mean((ratings[data.pair==testPair]
-                                 - pred[data.pair==testPair])**2))
+                                - pred[data.pair==testPair])**2))
     else:
         cost = np.sqrt(np.mean((ratings[data.pair!=testPair]
-                                 - pred[data.pair!=testPair])**2))
-    # print(cost) # only for initial or intermittent checks on speed and smoothness of convergence
+                                - pred[data.pair!=testPair])**2))
+    # print(cost) 
+    # only for initial/intermittent checks on speed/smoothness of convergence
     return cost
 
 def L2_const(parameters):
@@ -163,12 +170,12 @@ def L2_const(parameters):
     sumSq = np.sum(squared_mus)
     return 1- sumSq
 if constrainedMu:
-    cons = {'type':'eq', 'fun': L2_const}
+    cons = {'type': 'eq', 'fun': L2_const}
 
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Setting up a dict to store all results for each participant
-#------------------------------------------------------------
+# ------------------------------------------------------------
 if preLoad:
     resDf = pd.read_csv(dataDir + 'results/allFits/' + 'allFits_'
                             + str(n_features) + dnnFeatures + 'feat'
@@ -182,27 +189,27 @@ if preLoad:
         for peep in resDf.participant.unique():
             participantList.remove(peep)
 else:
-    resDict = {'res':[], 'rmse_fit': [],'rmse_pred': [],
+    resDict = {'res': [], 'rmse_fit': [],'rmse_pred': [],
                'participant': [], 'testPair': []}
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Optimization; looping through participants
-#------------------------------------------------------------
+# ------------------------------------------------------------
 for peep in participantList[:10]:
     data = df[df.subj==peep]
     ratings = data['rating'].values
 
     if preLoad:
         bestParams = np.load(dataDir + 'results/individuals/fit_'
-                                + peep
-                                + '_'
-                                + str(n_features) + dnnFeatures + 'feat'
-                                + fixParam
-                                + truncatePredictions
-                                + normalizedFeatures
-                                + varScaling
-                                + '.npy',
-                                allow_pickle=True).tolist()
+                             + peep
+                             + '_'
+                             + str(n_features) + dnnFeatures + 'feat'
+                             + fixParam
+                             + truncatePredictions
+                             + normalizedFeatures
+                             + varScaling
+                             + '.npy',
+                             allow_pickle=True).tolist()
     else:
         # preliminaries
         print('Fitting data of ' + peep)
@@ -225,17 +232,17 @@ for peep in participantList[:10]:
                 # the usual optimization
                 if constrainedMu:
                     thisRes = minimize(cost_fn, randStartValues,
-                                   args=(data.iloc[:55], testPair,),
-                                   method='SLSQP',
-                                   constraints = cons,
-                                   options={'maxiter': 1e4, 'ftol': 1e-06},
-                                   bounds=bounds)
+                                       args=(data.iloc[:55], testPair,),
+                                       method='SLSQP',
+                                       constraints=cons,
+                                       options={'maxiter': 1e4, 'ftol': 1e-06},
+                                       bounds=bounds)
                 else:
                     thisRes = minimize(cost_fn, randStartValues,
-                                   args=(data.iloc[:55], testPair,),
-                                   method='SLSQP',
-                                   options={'maxiter': 1e4, 'ftol': 1e-06},
-                                   bounds=bounds)
+                                       args=(data.iloc[:55], testPair,),
+                                       method='SLSQP',
+                                       options={'maxiter': 1e4, 'ftol': 1e-06},
+                                       bounds=bounds)
 
                 tmp_res.append(thisRes)
                 tmp_rmse.append(thisRes.fun)
@@ -264,47 +271,46 @@ for peep in participantList[:10]:
 
     bestPred = pred_ratings(bestParams, data)
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Plot
-#------------------------------------------------------------
+# ------------------------------------------------------------
     if plot:
-        r_fit = np.corrcoef(ratings[:55], bestPred[:55])[0,1]
-    
-        fig = plt.figure(0, (5,5))
+        r_fit = np.corrcoef(ratings[:55], bestPred[:55])[0, 1]
+        fig = plt.figure(0, (5, 5))
         plt.plot(ratings[:55], bestPred[:55], 'oC0', label='fit')
-        plt.plot([0,1], [0,1], '--k')
-        plt.text(.1,.8, '$r_{fit} = $' + str(np.round(r_fit,2)))
-        plt.ylim((0,1))
-        plt.xlim((0,1))
+        plt.plot([0, 1], [0, 1], '--k')
+        plt.text(.1, .8, '$r_{fit} = $' + str(np.round(r_fit, 2)))
+        plt.ylim((0, 1))
+        plt.xlim((0, 1))
         plt.xlabel('Data')
         plt.ylabel('Model')
         plt.title(peep)
         plt.show()
         plt.close()
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Save
-#------------------------------------------------------------
+# ------------------------------------------------------------
     if save:
         np.save(dataDir + 'results/individuals/fit_'
-                                + peep
-                                + '_'
-                                + str(n_features) + dnnFeatures + 'feat'
-                                + fixParam
-                                + truncatePredictions
-                                + normalizedFeatures
-                                + varScaling
-                                + '.npy', bestParams)
+                + peep
+                + '_'
+                + str(n_features) + dnnFeatures + 'feat'
+                + fixParam
+                + truncatePredictions
+                + normalizedFeatures
+                + varScaling
+                + '.npy', bestParams)
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Res dict to pandas dataframe and save as .csv
-#------------------------------------------------------------
+# ------------------------------------------------------------
 if save:
     resDf = pd.DataFrame(resDict)
     resDf.to_csv(dataDir + 'results/allFits/' + 'allFits_'
-                                + str(n_features) + dnnFeatures + 'feat'
-                                + fixParam
-                                + truncatePredictions
-                                + normalizedFeatures
-                                + varScaling
-                                + '.csv')
+                         + str(n_features) + dnnFeatures + 'feat'
+                         + fixParam
+                         + truncatePredictions
+                         + normalizedFeatures
+                         + varScaling
+                         + '.csv')
