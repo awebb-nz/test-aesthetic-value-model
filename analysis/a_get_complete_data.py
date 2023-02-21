@@ -14,13 +14,14 @@ import os
 import glob
 import ast
 import pandas as pd
-pd.options.mode.chained_assignment = None  # default='warn'; we are aware of the caveats but know that this is not an issue, here
+pd.options.mode.chained_assignment = None  # default='warn'
+# we are aware of the caveats but know that this is not an issue, here
 import numpy as np
 from scipy.stats import entropy, zscore
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Specify directories
-#------------------------------------------------------------
+# ------------------------------------------------------------
 #   further specificcations regarding the rounding of RTs, optimization, etc.
 #   can be changed in the respective places in the main code
 os.chdir('..')
@@ -30,9 +31,9 @@ homeDir = os.getcwd()
 dataDir = homeDir + '/data_experiment/*'
 saveDir = homeDir + '/'
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Initialize variables
-#------------------------------------------------------------
+# ------------------------------------------------------------
 dataList = glob.glob(dataDir)
 # initialize variables for end-of-experiment questions
 subjs_end = []
@@ -54,7 +55,7 @@ roundedRating_entropy = []
 corr_rating_sliderPos = []
 block = []
 
-#initialize variables for rating data
+# initialize variables for rating data
 ratings = []
 zScored_ratings = []
 subjs_rate = []
@@ -69,15 +70,15 @@ subjs_view = []
 imgs_view = []
 trialInd_view = []
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Loop through all data files and fetch variables
-#------------------------------------------------------------
+# ------------------------------------------------------------
 for ss in range(len(dataList)):
     thisData = pd.read_csv(dataList[ss])
-    ratingData = thisData[thisData.trial_type=='html-slider-response']
+    ratingData = thisData[thisData.trial_type == 'html-slider-response']
 
     # all viewing trials, excluding practice
-    viewingData = thisData[thisData.trial_type=='timed-html-button-response'][5:]
+    viewingData = thisData[thisData.trial_type == 'timed-html-button-response'][5:]
 
     strategyData = ast.literal_eval(thisData.response.values[-3])
     experienceData = ast.literal_eval(thisData.response.values[-4])
@@ -125,37 +126,37 @@ for ss in range(len(dataList)):
 
     # correlation between ratings and initial slider position
     corr = np.corrcoef(ratingData.response.astype(float),
-                       ratingData.slider_start.astype(float))[0,1]
+                       ratingData.slider_start.astype(float))[0, 1]
     corr_rating_sliderPos.append(corr)
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Create df for rating data
-#------------------------------------------------------------
-d = {'subj':subjs_rate, 'rating':ratings, 'zScored_ratings': zScored_ratings,
-     'rt':rts_rate, 'raw_image_name':imgs_rate,
-     'sliderStart':sliderStart, 'trial': trialInd_rate, 'block': block}
+# ------------------------------------------------------------
+d = {'subj': subjs_rate, 'rating': ratings, 'zScored_ratings': zScored_ratings,
+     'rt': rts_rate, 'raw_image_name': imgs_rate,
+     'sliderStart': sliderStart, 'trial': trialInd_rate, 'block': block}
 df = pd.DataFrame(d)
-df.rating = df.rating.astype(int) # convert ratings to numeric
-df.rating = df.rating/500 # also convert them to % of rating scale
-df.rt = df.rt/100 # also down-scale RTs
+df.rating = df.rating.astype(int)  # convert ratings to numeric
+df.rating = df.rating/500  # also convert them to % of rating scale
+df.rt = df.rt/100  # also down-scale RTs
 
 # clean up the image names
 df['image'] = df['raw_image_name'].copy()
-df['image'] = df['image'].str.replace('images/experiment/','')
-df['image'] = df['image'].str.replace('pair_','')
-df['image'] = df['image'].str.replace('_start','')
-df['image'] = df['image'].str.replace('.png','')
-df['image'] = df['image'].str.replace('_out_tensor','')
-df['image'] = df['image'].str.replace('(0.3333)','0.33')
-df['image'] = df['image'].str.replace('(0.5000)','0.5')
-df['image'] = df['image'].str.replace('(0.6667)','0.67')
-df['image'] = df['image'].str.replace(r'\(','_')
-df['image'] = df['image'].str.replace(r'\)','')
+df['image'] = df['image'].str.replace('images/experiment/', '', regex=True)
+df['image'] = df['image'].str.replace('pair_', '', regex=True)
+df['image'] = df['image'].str.replace('_start', '', regex=True)
+df['image'] = df['image'].str.replace('.png', '', regex=True)
+df['image'] = df['image'].str.replace('_out_tensor', '', regex=True)
+df['image'] = df['image'].str.replace('(0.3333)', '0.33', regex=True)
+df['image'] = df['image'].str.replace('(0.5000)', '0.5', regex=True)
+df['image'] = df['image'].str.replace('(0.6667)', '0.67', regex=True)
+df['image'] = df['image'].str.replace(r'\(', '_', regex=True)
+df['image'] = df['image'].str.replace(r'\)', '', regex=True)
 
 # strip away morph stage, save as image pair variable
-df['pair'] = df['image'].str.replace('0.33','')
-df['pair'] = df['pair'].str.replace('0.5','')
-df['pair'] = df['pair'].str.replace('0.67','')
+df['pair'] = df['image'].str.replace('0.33', '', regex=True)
+df['pair'] = df['pair'].str.replace('0.5', '', regex=True)
+df['pair'] = df['pair'].str.replace('0.67', '', regex=True)
 
 # now separately store variables for each present source image
 sourceImages = df['image'].str.split(pat='_', expand=True)
@@ -172,9 +173,9 @@ df = df.sort_values(by=['subj', 'trial'])
 # save
 df.to_csv(saveDir + 'merged_rating_data.csv')
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # df for demographics and end-of-experiment questions
-#------------------------------------------------------------
+# ------------------------------------------------------------
 # the bits we have to calculate here are the ones that relate to the entire
 # data across participants
 avgRatingPerImage = []
@@ -187,10 +188,10 @@ for subj in subjs_end:
     theseRatings = df.loc[df.subj==subj,'rating']
     avgsArray = np.array(avgRatingPerImage)
     matchedAvgRatings = avgsArray[thisDf.imageInd.astype(int)]
-    corr = np.corrcoef(theseRatings, matchedAvgRatings)[0,1]
+    corr = np.corrcoef(theseRatings, matchedAvgRatings)[0, 1]
     ratingCorrAvgRating.append(corr)
 
-d = {'subj':subjs_end, 'wantPrevImg':wantPrevImg, 'strategy':strategies,
+d = {'subj': subjs_end, 'wantPrevImg': wantPrevImg, 'strategy': strategies,
      'switchReason': switchReasons, 'boredom': boredom, 'dogLiking': dogLiking,
      'dogPast': dogPast, 'dogPresent': dogPresent,
      'imgBrowseDur': imgBrowseDurs, 'imgBrowseLike': imgBrowseLikes,
@@ -205,13 +206,13 @@ df = pd.DataFrame(d)
 # save
 df.to_csv(saveDir + '/merged_participantInfo.csv', index=False)
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Df for free viewing data
-#------------------------------------------------------------
-d = {'subj':subjs_view, 'viewTime':viewTimes, 'image':imgs_view,
+# ------------------------------------------------------------
+d = {'subj': subjs_view, 'viewTime': viewTimes, 'image': imgs_view,
      'trial': trialInd_view}
 df = pd.DataFrame(d)
-#create a ranked view time variable
+# create a ranked view time variable
 viewTimeRanks = []
 counter = 0
 for peep in subjs_end:
@@ -219,24 +220,24 @@ for peep in subjs_end:
     viewTimeRanks.extend(thisDf.viewTime.rank().values)
     counter += len(thisDf)
 df['viewTimeRank'] = viewTimeRanks
-df.viewTime = df.viewTime/100 # down-scale viewTimes
+df.viewTime = df.viewTime/100  # down-scale viewTimes
 
 # clean up the image names
-df['image'] = df['image'].str.replace('images/experiment/','')
-df['image'] = df['image'].str.replace('pair_','')
-df['image'] = df['image'].str.replace('_start','')
-df['image'] = df['image'].str.replace('.png','')
-df['image'] = df['image'].str.replace('_out_tensor','')
-df['image'] = df['image'].str.replace('(0.3333)','0.33')
-df['image'] = df['image'].str.replace('(0.5000)','0.5')
-df['image'] = df['image'].str.replace('(0.6667)','0.67')
-df['image'] = df['image'].str.replace(r'\(','_')
-df['image'] = df['image'].str.replace(r'\)','')
+df['image'] = df['image'].str.replace('images/experiment/', '', regex=True)
+df['image'] = df['image'].str.replace('pair_', '', regex=True)
+df['image'] = df['image'].str.replace('_start', '', regex=True)
+df['image'] = df['image'].str.replace('.png', '', regex=True)
+df['image'] = df['image'].str.replace('_out_tensor', '', regex=True)
+df['image'] = df['image'].str.replace('(0.3333)', '0.33', regex=True)
+df['image'] = df['image'].str.replace('(0.5000)', '0.5', regex=True)
+df['image'] = df['image'].str.replace('(0.6667)', '0.67', regex=True)
+df['image'] = df['image'].str.replace(r'\(', '_', regex=True)
+df['image'] = df['image'].str.replace(r'\)', '', regex=True)
 
 # strip away morph stage, save as image pair variable
-df['pair'] = df['image'].str.replace('0.33','')
-df['pair'] = df['pair'].str.replace('0.5','')
-df['pair'] = df['pair'].str.replace('0.67','')
+df['pair'] = df['image'].str.replace('0.33', '', regex=True)
+df['pair'] = df['pair'].str.replace('0.5', '', regex=True)
+df['pair'] = df['pair'].str.replace('0.67', '', regex=True)
 
 # now separately store variables for each present source image
 sourceImages = df['image'].str.split(pat='_', expand=True)
