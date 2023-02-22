@@ -14,10 +14,10 @@ import os
 import glob
 import ast
 import pandas as pd
-pd.options.mode.chained_assignment = None  # default='warn'
-# we are aware of the caveats but know that this is not an issue, here
 import numpy as np
 from scipy.stats import entropy, zscore
+pd.options.mode.chained_assignment = None  # default='warn'
+# we are aware of the caveats but know that this is not an issue, here
 
 # %% ---------------------------------------------------------
 # Specify directories
@@ -115,7 +115,7 @@ for ss in range(len(dataList)):
     nationalities.append(demographicData['nationality'])
 
     # block number
-    block.extend([int(trial>60)+1 for trial in ratingData.trial_index.astype(int)])
+    block.extend([int(trial > 60) + 1 for trial in ratingData.trial_index.astype(int)])
 
     # entropy across all ratings
     counts = ratingData.response.value_counts()
@@ -180,12 +180,12 @@ df.to_csv(saveDir + 'merged_rating_data.csv')
 # data across participants
 avgRatingPerImage = []
 for im in np.unique(df.imageInd):
-    avgRatingPerImage.append(np.mean(df.loc[df.imageInd==im, 'rating']))
+    avgRatingPerImage.append(np.mean(df.loc[df.imageInd == im, 'rating']))
 
 ratingCorrAvgRating = []
 for subj in subjs_end:
-    thisDf = df[df.subj==subj]
-    theseRatings = df.loc[df.subj==subj,'rating']
+    thisDf = df[df.subj == subj]
+    theseRatings = df.loc[df.subj == subj, 'rating']
     avgsArray = np.array(avgRatingPerImage)
     matchedAvgRatings = avgsArray[thisDf.imageInd.astype(int)]
     corr = np.corrcoef(theseRatings, matchedAvgRatings)[0, 1]
@@ -216,7 +216,7 @@ df = pd.DataFrame(d)
 viewTimeRanks = []
 counter = 0
 for peep in subjs_end:
-    thisDf = df[df.subj==peep]
+    thisDf = df[df.subj == peep]
     viewTimeRanks.extend(thisDf.viewTime.rank().values)
     counter += len(thisDf)
 df['viewTimeRank'] = viewTimeRanks
