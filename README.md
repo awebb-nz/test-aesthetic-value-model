@@ -16,6 +16,8 @@ In addition, it contains "map_imgName_imgIdx.csv" which provides a safe way to e
 
 As a bonus, it contains the "plot_images_inVGGspace.py" script which visualizes the location of the stimulus images in reduced DNN-feature space.
 
+You will also note the requirements.txt file which lists all packages that are required to runn all scripts. NOTE that pingouin may not be compatible with the latest numpy version. To run the analyses that require pingouin, downgrade your environment's numpy version to < 1.24.
+
 ## analysis
 
 Contains all scripts needed to reproduce the analyses reported in the paper as well as the code for re-creating the figures. 
