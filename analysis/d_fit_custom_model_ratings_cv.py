@@ -25,7 +25,7 @@ os.chdir('..')
 home_dir = os.getcwd()
 dataDir = home_dir + '/'
 
-n_features = 2  # dimensionality of assumed feature space
+n_features = 3  # dimensionality of assumed feature space
 n_base_stims = 7  # unique images used as basis for morphing
 scaleVariances = False  # see fitPilot.py for details
 if scaleVariances:
@@ -37,15 +37,15 @@ truncatePredictions = ''  # either '' for regular predictions or 'truncated'
 normalizedFeatures = ''  # either 'normed' or ''
 constrainedMu = False
 dnnFeatures = 'vgg'  # either '' or spec of DNN (vgg, ResNet50)
-fixParam = 'alphazero_wVzero'  # mainly '' or 'alphazero_wVzero'
+fixParam = ''  # mainly '' or 'alphazero_wVzero'
 # others are possible
 
 save = False  # save parameter values?
 plot = True  # plot data vs predictions?
-preLoad = False  # load parameter values rather than fit them?
+preLoad = True  # load parameter values rather than fit them?
 fitMissingParticipants = False
 # fit data of participants that cannot be preloaded?
-# NOTE that you have to set this to False if you want to preload data from 
+# NOTE that you have to set this to False if you want to preload data from
 # all participants.
 
 # %% ---------------------------------------------------------
@@ -59,7 +59,7 @@ fixedDict = {}
 # get data
 df = pd.read_csv(dataDir + 'merged_rating_data.csv')
 
-if dnnFeatures!='':
+if dnnFeatures != '':
     # get (reduced) VGG features
     featureDf = pd.read_pickle(dataDir + '/'
                                + dnnFeatures + '_features/' + dnnFeatures
@@ -67,14 +67,14 @@ if dnnFeatures!='':
                                + str(n_features) + '.pkl')
     # now create an array that contains featuers of the images in right order
     for imgInd in np.unique(df.imageInd):
-        img = np.unique(df.image[df.imageInd==imgInd])[0]
-        if imgInd==0:
-            dnnFeatValues = featureDf.feature_array[featureDf.image==img].values[0]
+        img = np.unique(df.image[df.imageInd == imgInd])[0]
+        if imgInd == 0:
+            dnnFeatValues = featureDf.feature_array[featureDf.image == img].values[0]
         else:
             dnnFeatValues = np.vstack([dnnFeatValues,
-                                       featureDf.feature_array[featureDf.image==img].values[0]])
+                                       featureDf.feature_array[featureDf.image == img].values[0]])
 
-    if normalizedFeatures=='normed':
+    if normalizedFeatures == 'normed':
         dnnFeatValues = preprocessing.normalize(dnnFeatValues, 'l2')
 
     fixedDict['features'] = dnnFeatValues
@@ -89,21 +89,21 @@ if 'wVzero' in fixParam:
     fixedDict['w_V'] = 0
 if 'wrzero' in fixParam:
     fixedDict['w_r'] = 0
-if fixParam=='' and dnnFeatures=='':
+if fixParam == '' and dnnFeatures == '':
     fixedDict = None
 
 # IDs to choose from (not including excluded subjs):
 participantList = ['q22fa', 'eunhf', 'fax28', '1z0ca', '0xmq6',
-                    'z19vf', 'pu7uh', 's4tsr', 'n0htt', 'zouzq', 'nqfzn',
-                    'oveao', 'mh0hn', 'mbx6w', '46vpz', 'sdx2b', 'jmzs9',
-                    'jeu26', 'hvjjw', 'xj6bc', '3l6s4', 'chb6q', 'kwqcc',
-                    'czgyu', 'nyp52', 'pshnw', 'faow1', 'kuoa6', '7df33',
-                    'mrx1q', 'quzfn', 're1sg', 'j49v1', '19bq6', 'r4ron',
-                    '8kyd7', 'nq3sp', 'rsw55', '37o95', 'wtr4q', 'ar5vx',
-                    '6yaxg', 'jv7jg', 'ms8r4', '520tj', '9gjbe',
-                    'njzz4', 'rq280', 'tg4o2', 'fpt0a', 'k02z1', 'u0pc9',
-                    'hxal4', 'h647a', 'r1g8p', '89w87', 'zv0ou', 'qrbxe',
-                    '6r8qk']
+                   'z19vf', 'pu7uh', 's4tsr', 'n0htt', 'zouzq', 'nqfzn',
+                   'oveao', 'mh0hn', 'mbx6w', '46vpz', 'sdx2b', 'jmzs9',
+                   'jeu26', 'hvjjw', 'xj6bc', '3l6s4', 'chb6q', 'kwqcc',
+                   'czgyu', 'nyp52', 'pshnw', 'faow1', 'kuoa6', '7df33',
+                   'mrx1q', 'quzfn', 're1sg', 'j49v1', '19bq6', 'r4ron',
+                   '8kyd7', 'nq3sp', 'rsw55', '37o95', 'wtr4q', 'ar5vx',
+                   '6yaxg', 'jv7jg', 'ms8r4', '520tj', '9gjbe',
+                   'njzz4', 'rq280', 'tg4o2', 'fpt0a', 'k02z1', 'u0pc9',
+                   'hxal4', 'h647a', 'r1g8p', '89w87', 'zv0ou', 'qrbxe',
+                   '6r8qk']
 
 # sort the participant list for consistency
 participantList.sort()
@@ -112,21 +112,22 @@ participantList.sort()
 # Set bounds for optimization
 # ------------------------------------------------------------
 if 'alphazero' not in fixParam:
-    bounds = ((0,0.1), (0,1e4),) # alpha, weight(s)
+    bounds = ((0, 0.1), (0, 1e4), )  # alpha, weight(s)
 else:
-    bounds = ((0,1e4),) # weight w_r
+    bounds = ((0, 1e4), )  # weight w_r
 if 'wVzero' not in fixParam and 'wrzero' not in fixParam:
-    bounds += ((0,1e4),)
-bounds += ((-1,1),) # bias
+    bounds += ((0, 1e4), )
+bounds += ((-1, 1), )  # bias
 if 'muStateFix' not in fixParam:
-   bounds += ((-10, 10), ) * n_features # mu state
-bounds += ((0, 10), ) # var state
+    bounds += ((-10, 10), ) * n_features  # mu state
+bounds += ((0, 10), )  # var state
+
 # below: no need for p_true if there is no learning
 if 'alphazero' not in fixParam:
-    bounds += ((-10, 10), ) * n_features # mu true
-    bounds += ((0, 10), ) # var true
-if dnnFeatures=='':
-   bounds += ((-10,10), ) * n_base_stims*n_features # stimuli
+    bounds += ((-10, 10), ) * n_features  # mu true
+    bounds += ((0, 10), )  # var true
+if dnnFeatures == '':
+    bounds += ((-10, 10), ) * n_base_stims*n_features  # stimuli
 
 nParams = len(bounds)
 
@@ -139,12 +140,15 @@ pairs = np.delete(tmp, sourceImInds)
 # %% ---------------------------------------------------------
 # Cost function
 # ------------------------------------------------------------
+
+
 def pred_ratings(parameters, data):
     pred = fitPilot.predict(parameters, data.iloc[:55],
-                                  n_features=n_features,
-                                  fixParameters=fixedDict,
-                                  scaleVariances=scaleVariances)
+                            n_features=n_features,
+                            fixParameters=fixedDict,
+                            scaleVariances=scaleVariances)
     return pred
+
 
 def cost_fn(parameters, data, testPair, test=False):
     ratings = data['rating'].values
@@ -152,14 +156,15 @@ def cost_fn(parameters, data, testPair, test=False):
     pred = pred_ratings(parameters, data)
 
     if test:
-        cost = np.sqrt(np.mean((ratings[data.pair==testPair]
-                                - pred[data.pair==testPair])**2))
+        cost = np.sqrt(np.mean((ratings[data.pair == testPair]
+                                - pred[data.pair == testPair])**2))
     else:
-        cost = np.sqrt(np.mean((ratings[data.pair!=testPair]
-                                - pred[data.pair!=testPair])**2))
-    # print(cost) 
+        cost = np.sqrt(np.mean((ratings[data.pair != testPair]
+                                - pred[data.pair != testPair])**2))
+    # print(cost)
     # only for initial/intermittent checks on speed/smoothness of convergence
     return cost
+
 
 def L2_const(parameters):
     _, _, _, _, mu_0, _, _, _, _ = fitPilot.unpackParameters(parameters,
@@ -168,7 +173,9 @@ def L2_const(parameters):
                                                              scaleVariances=scaleVariances)
     squared_mus = [m*2 for m in mu_0]
     sumSq = np.sum(squared_mus)
-    return 1- sumSq
+    return 1 - sumSq
+
+
 if constrainedMu:
     cons = {'type': 'eq', 'fun': L2_const}
 
@@ -178,25 +185,25 @@ if constrainedMu:
 # ------------------------------------------------------------
 if preLoad:
     resDf = pd.read_csv(dataDir + 'results/allFits/' + 'allFits_'
-                            + str(n_features) + dnnFeatures + 'feat'
-                            + fixParam
-                            + truncatePredictions
-                            + normalizedFeatures
-                            + varScaling
-                            + '.csv')
+                        + str(n_features) + dnnFeatures + 'feat'
+                        + fixParam
+                        + truncatePredictions
+                        + normalizedFeatures
+                        + varScaling
+                        + '.csv')
     resDict = resDf.to_dict()
     if fitMissingParticipants:
         for peep in resDf.participant.unique():
             participantList.remove(peep)
 else:
-    resDict = {'res': [], 'rmse_fit': [],'rmse_pred': [],
+    resDict = {'res': [], 'rmse_fit': [], 'rmse_pred': [],
                'participant': [], 'testPair': []}
 
 # %% ---------------------------------------------------------
 # Optimization; looping through participants
 # ------------------------------------------------------------
-for peep in participantList[:10]:
-    data = df[df.subj==peep]
+for peep in participantList[:]:
+    data = df[df.subj == peep]
     ratings = data['rating'].values
 
     if preLoad:
@@ -232,14 +239,14 @@ for peep in participantList[:10]:
                 # the usual optimization
                 if constrainedMu:
                     thisRes = minimize(cost_fn, randStartValues,
-                                       args=(data.iloc[:55], testPair,),
+                                       args=(data.iloc[:55], testPair, ),
                                        method='SLSQP',
                                        constraints=cons,
                                        options={'maxiter': 1e4, 'ftol': 1e-06},
                                        bounds=bounds)
                 else:
                     thisRes = minimize(cost_fn, randStartValues,
-                                       args=(data.iloc[:55], testPair,),
+                                       args=(data.iloc[:55], testPair, ),
                                        method='SLSQP',
                                        options={'maxiter': 1e4, 'ftol': 1e-06},
                                        bounds=bounds)
