@@ -8,15 +8,15 @@ Created on Fri Jan 21
 import os
 import numpy as np
 import pandas as pd
-pd.options.mode.chained_assignment = None # disable SettingWithCopyWarning
 from matplotlib import pyplot as plt
 import seaborn as sns
-import pingouin as pg # for ICC
-from scipy import stats # for testing distribution of ratings
+import pingouin as pg  # for ICC
+from scipy import stats  # for testing distribution of ratings
+pd.options.mode.chained_assignment = None  # disable SettingWithCopyWarning
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Specify directories; settings
-#------------------------------------------------------------
+# ------------------------------------------------------------
 os.chdir('..')
 homeDir = os.getcwd()
 # IDs (not including excluded subjs):
@@ -34,26 +34,26 @@ participantList = ['q22fa', 'eunhf', 'fax28', '1z0ca', '0xmq6',
 participantList.sort()
 dataDir = homeDir + '/'
 plot = True
-plotIndividuals = False # plots for individual participants' rating distribution
+plotIndividuals = False  # plots for each participant's rating distribution
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Load data
-#------------------------------------------------------------
+# ------------------------------------------------------------
 rawDf = pd.read_csv(dataDir + 'merged_rating_data.csv')
 df = rawDf[rawDf['subj'].isin(participantList)]
-df = df[df['block']==1]
+df = df[df['block'] == 1]
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # ICC and rating distribution per image
-#------------------------------------------------------------
+# ------------------------------------------------------------
 icc = pg.intraclass_corr(data=df, targets='imageInd', raters='subj',
                          ratings='rating').round(3)
 print(icc.set_index("Type"))
 
 mdnRatingsPerImage = df.groupby(['imageInd'])['rating'].median().sort_values()
-mdnImgs =  mdnRatingsPerImage[mdnRatingsPerImage==mdnRatingsPerImage.median()]
+mdnImgs =  mdnRatingsPerImage[mdnRatingsPerImage == mdnRatingsPerImage.median()]
 
-fig, ax = plt.subplots(figsize=(15,5))
+fig, ax = plt.subplots(figsize=(15, 5))
 sns.stripplot(data=df, x='imageInd', y='rating', alpha=.33, color='C0',
               order=mdnRatingsPerImage.index)
 ax.set_xlabel('image #')
@@ -61,13 +61,13 @@ sns.despine()
 plt.show()
 plt.close()
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Check distribution of ratings
-#------------------------------------------------------------
+# ------------------------------------------------------------
 pValShap = []
 
 for peep in participantList:
-    thisDf = df[df.subj==peep]
+    thisDf = df[df.subj == peep]
 
     # first, test whether ratings are normally distributed
     shapTest = stats.shapiro(thisDf['rating'])
@@ -77,10 +77,10 @@ for peep in participantList:
     if plotIndividuals:
         g = sns.displot(data=thisDf, x='rating', hue='block',
                         kind='kde', palette='tab10')
-        g.ax.set_xlim((0,1))
+        g.ax.set_xlim((0, 1))
         plt.show()
         plt.close()
 
 print('')
 print('N participants with non-normal rating dist: ')
-print(str(np.sum([p<0.05 for p in pValShap])))
+print(str(np.sum([p < 0.05 for p in pValShap])))
