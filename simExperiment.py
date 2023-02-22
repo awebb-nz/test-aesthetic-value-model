@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr 9
+Created on Fri Apr 9 2021
+Last Updated Wed Feb 22 2023
 
 @author: abrielmann
 
@@ -23,7 +24,7 @@ def logLik_from_mahalanobis(stim, mu_x, cov, k=None):
     stim = np.array(stim)
     mu_x = np.array(mu_x)
 
-    if mu_x.shape == (1, ) or mu_x.shape == ():  # if 1D
+    if mu_x.shape == (1, ) or mu_x.shape==(): # if 1D
         if cov > 0:
             z = norm(mu=mu_x, sigma=cov).pdf(stim)
         else:
@@ -51,7 +52,7 @@ def KL_distributions(mu_true, cov_true, mu_state, cov_state):
     """
     derivation: http://stanford.edu/~jduchi/projects/general_notes.pdf
     further additions were added to handle non-positive definite covariance
-    matrices and 1D case (see 
+    matrices and 1D case (see
     https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence#Multivariate_normal_distributions
     for the simplification).
 
@@ -71,13 +72,15 @@ def KL_distributions(mu_true, cov_true, mu_state, cov_state):
     KL.
 
     """
-    mu_diff = np.array(mu_state).astype(float) - np.array(mu_true).astype(float)
+    mu_diff = (np.array(mu_state).astype(float)
+               - np.array(mu_true).astype(float))
 
-    if np.array(mu_true).shape==() or np.array(mu_true).shape==(1,):
-        if cov_state==0:
+    if np.array(mu_true).shape == () or np.array(mu_true).shape == (1, ):
+        if cov_state == 0:
             KL = np.inf
         else:
-            KL = np.log(cov_state/cov_true) + (cov_true-mu_diff**2)/(2*cov_state**2) - 0.5
+            KL = (np.log(cov_state/cov_true)
+                  + (cov_true-mu_diff**2)/(2*cov_state**2) - 0.5)
     else:
         n = len(mu_true)
         try:
@@ -85,7 +88,7 @@ def KL_distributions(mu_true, cov_true, mu_state, cov_state):
         except np.linalg.LinAlgError as err:
             if 'Singular matrix' in str(err):
                 cov_state_inv = np.linalg.pinv(cov_state)
-                eig_values,_ = np.linalg.eig(cov_state)
+                eig_values, _ = np.linalg.eig(cov_state)
                 cov_state_det = np.product(eig_values[eig_values > 1e-12])
             else:
                 raise
@@ -96,7 +99,7 @@ def KL_distributions(mu_true, cov_true, mu_state, cov_state):
             np.linalg.inv(cov_true)
         except np.linalg.LinAlgError as err:
             if 'Singular matrix' in str(err):
-                eig_values,_ = np.linalg.eig(cov_true)
+                eig_values, _ = np.linalg.eig(cov_true)
                 cov_true_det = np.product(eig_values[eig_values > 1e-12])
             else:
                 raise
@@ -104,10 +107,10 @@ def KL_distributions(mu_true, cov_true, mu_state, cov_state):
             cov_true_det = np.linalg.det(cov_true)
 
         KL = (0.5 *
-              (np.log((cov_state_det / cov_true_det))
-                  - n
-                  + np.trace(np.dot(cov_state_inv, cov_true))
-                  + np.dot(np.dot(mu_diff.T, cov_state_inv), mu_diff)))
+              np.log((cov_state_det / cov_true_det))
+              - n
+              + np.trace(np.dot(cov_state_inv, cov_true))
+              + np.dot(np.dot(mu_diff.T, cov_state_inv), mu_diff))
 
     return KL
 
@@ -206,7 +209,7 @@ def calc_predictions(mu, cov, mu_init, cov_init, alpha,
     r_t : float, optional
         predicted r(t) for stim
     """
-    if np.array(mu).shape==() or np.array(mu).shape==(1,):
+    if np.array(mu).shape == () or np.array(mu).shape == (1, ):
         n_features = 1
     else:
         n_features = len(mu)
@@ -215,7 +218,7 @@ def calc_predictions(mu, cov, mu_init, cov_init, alpha,
     mu_new = np.array(mu_new).astype(float)
 
     # update mu because at this moment, agent is exposed to stim
-    if stim_dur==0:
+    if stim_dur == 0:
         mu_new = mu_new + ((stim - mu_new) * alpha)
     else:
         s_minus_mu = stim - mu_new
@@ -288,7 +291,7 @@ def predict_ratings(mu_0, cov_state, mu_true, cov_true, alpha, w_r, w_V,
     stim_dur: int
         presentation duration of stim in arbitrary units of time
     w_r : float, optional
-        relative weight of r(t) for calculating A(t). The default is 1.
+        realtive weight of r(t) for calculating A(t). The default is 1.
     w_V : float, optional
         relative weight of delta-V for calculating A(t). The default is 1.
     bias : float, optional
@@ -307,8 +310,8 @@ def predict_ratings(mu_0, cov_state, mu_true, cov_true, alpha, w_r, w_V,
     new_mu = mu_0.copy()
 
     # incase we only get 1 stim dur, assume it is always the same
-    if len(stim_dur)==1:
-        durations = np.repeat(stim_dur,len(stims))
+    if len(stim_dur) == 1:
+        durations = np.repeat(stim_dur, len(stims))
     else:
         durations = stim_dur
 
@@ -316,26 +319,26 @@ def predict_ratings(mu_0, cov_state, mu_true, cov_true, alpha, w_r, w_V,
     for stim in stims:
         if predict_trial_start:
             A_t, new_mu = calc_predictions(new_mu, cov_state,
-                                             mu_true, cov_true,
-                                             alpha,
-                                             stim,
-                                             w_r=w_r, w_V=w_V,
-                                             bias=bias,
-                                             return_mu=True)
+                                           mu_true, cov_true,
+                                           alpha,
+                                           stim,
+                                           w_r=w_r, w_V=w_V,
+                                           bias=bias,
+                                           return_mu=True)
             new_mu = simulate_practice_trials(new_mu, cov_state, alpha,
-                                               stim, n_stims=1,
-                                               stim_dur=durations[trial])
+                                              stim, n_stims=1,
+                                              stim_dur=durations[trial])
         else:
             new_mu = simulate_practice_trials(new_mu, cov_state, alpha,
-                                               stim, n_stims=1,
-                                               stim_dur=durations[trial])
+                                              stim, n_stims=1,
+                                              stim_dur=durations[trial])
             A_t, new_mu = calc_predictions(new_mu, cov_state,
-                                             mu_true, cov_true,
-                                             alpha,
-                                             stim,
-                                             w_r=w_r, w_V=w_V,
-                                             bias=bias,
-                                             return_mu=True)
+                                           mu_true, cov_true,
+                                           alpha,
+                                           stim,
+                                           w_r=w_r, w_V=w_V,
+                                           bias=bias,
+                                           return_mu=True)
         pred_ratings.append(A_t)
         trial += 1
 
