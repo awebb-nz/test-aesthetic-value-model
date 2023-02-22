@@ -8,11 +8,11 @@ Modified Wed Jan 4 2023: cleaning up
 """
 import os
 import pandas as pd
-pd.options.mode.chained_assignment = None # disable SettingWithCopyWarning
+pd.options.mode.chained_assignment = None  # disable SettingWithCopyWarning
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Specify directories; settings
-#------------------------------------------------------------
+# ------------------------------------------------------------
 os.chdir('..')
 homeDir = os.getcwd()
 # IDs (not including excluded subjs):
@@ -30,17 +30,17 @@ participantList = ['q22fa', 'eunhf', 'fax28', '1z0ca', '0xmq6',
 participantList.sort()
 dataDir = homeDir + '/'
 plot = False
-plotIndividuals = True # plots for individual participants' rating distribution
+plotIndividuals = True  # plots for each participant's rating distribution
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # Load data
-#------------------------------------------------------------
+# ------------------------------------------------------------
 rawDf = pd.read_csv(dataDir + 'merged_participantInfo.csv')
 df = rawDf[rawDf['subj'].isin(participantList)]
 
-#%% ---------------------------------------------------------
+# %% ---------------------------------------------------------
 # demographics; use print() to display
-#------------------------------------------------------------
+# ------------------------------------------------------------
 df.age.describe()
 df.education.value_counts()
 df.nationality.value_counts()
@@ -51,10 +51,8 @@ df.imgBrowseLike.value_counts()
 df.dogLiking.value_counts()
 df.boredom.value_counts()
 
-#%%---------------------------------------------------------
+# %%---------------------------------------------------------
 # related to rating behavior; use print() to display
-#------------------------------------------------------------
+# ------------------------------------------------------------
 df.corrRatingSliderPos.describe()
 df.ratingCorrWithAvg.describe()
-
-
