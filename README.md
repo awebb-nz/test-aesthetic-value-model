@@ -23,6 +23,10 @@ python a_get_complete_data.py #etc
 
 You should then be able to run any of the analysis scripts. You will also note the `requirements.txt` file which lists all packages that are required to run all scripts. NOTE that pingouin may not be compatible with the latest numpy version. To run the analyses that require pingouin, downgrade your environment's numpy version to < 1.24.
 
+## Which code to run and what it does
+
+???
+
 
 # Folder content
 
